@@ -219,8 +219,30 @@ int main(int args, char **argv)
 					printf("Route result wrong!\n");
 					//TODO: "deep inspect" route by traversing back to root and check weight
 					printf("GPU - CPU\n");
-					for(int i = 0; i < 10; i ++) {
-						std::cout<<gpu_routes[i]<<" "<<cpu_routes[i]<<"\n";
+					for(vertex_t i = 0; i < ginst->vert_count; i++){
+						if (gpu_routes[i] != cpu_routes[i]) {
+							printf("%d: (%d, %d) - (%d, %d): %d\n", i,
+								gpu_routes[i],
+								gpu_dist[gpu_routes[i]],
+								cpu_routes[i],
+								cpu_dist[cpu_routes[i]],
+								gpu_dist[gpu_routes[i]] - cpu_dist[cpu_routes[i]]
+							);
+							printf("\tG: ");
+							vertex_t current = i;
+							while(current != -1) {
+								printf("%d->", current);
+								current = gpu_routes[current];
+							}
+							printf("\n");
+							printf("\tC: ");
+							current = i;
+							while(current != -1) {
+								printf("%d->", current);
+								current = cpu_routes[current];
+							}
+							printf("\n");
+						}
 					}
 					break;
 				}

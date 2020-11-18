@@ -175,10 +175,10 @@ class mapper
                                 //instead the old val, in this case vert_status[vert_end].
                                 
                                 //!!! atomicMin does the write!!!
-                                //TODO: What if we also sort by route
+                                //TODO: Deal with _all_ the race conditions here
                                 feature_t old_dist = atomicMin(vert_status + vert_end, dist);
                                 if(old_dist > dist){
-                                    vert_data_out[vert_end] = dist_ret.data_out;
+                                    vert_data_out[vert_end] = dist_ret.data_out; // This line NOT atomic
                                     if(my_front_count < BIN_SZ)
                                     {
                                         worklist_bin[bin_off + my_front_count] = vert_end;

@@ -83,33 +83,33 @@ class mapper
 						weight = weight_list[j];
 						feature_t dist = (*edge_compute_push)(frontier,vert_end,
 								level,beg_pos,weight,vert_status, vert_status_prev);
-#ifdef __VOTE__
-						if(vert_status[vert_end] != dist)
-						{
-							vert_status[vert_end] = dist;
-							appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-						}
-#elif __AGG_MIN__
-						if(vert_status[vert_end] > dist)
-						{
-							if(atomicMin(vert_status + vert_end, dist) > dist)
-                            //vert_status[vert_end] = dist;
-    							appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-						}
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-						if(vert_status[vert_end] > dist)
-						{
-							if(atomicMin(vert_status + vert_end, dist) > dist)
-    							appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-						}
+						#ifdef __VOTE__
+							if(vert_status[vert_end] != dist)
+							{
+								vert_status[vert_end] = dist;
+								appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+							}
+						#elif __AGG_MIN__
+							if(vert_status[vert_end] > dist)
+							{
+								if(atomicMin(vert_status + vert_end, dist) > dist)
+								//vert_status[vert_end] = dist;
+									appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+							}
+						#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+							if(vert_status[vert_end] > dist)
+							{
+								if(atomicMin(vert_status + vert_end, dist) > dist)
+									appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+							}
 
-#elif __AGG_SUB__
-						if(vert_status[vert_end] > K)
-						{
-							if (atomicSub(vert_status + vert_end, dist) == K)
-    							appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-						}
-#endif
+						#elif __AGG_SUB__
+							if(vert_status[vert_end] > K)
+							{
+								if (atomicSub(vert_status + vert_end, dist) == K)
+									appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+							}
+						#endif
 					}
 				}
 
@@ -144,64 +144,64 @@ class mapper
 					for(index_t j = beg + THD_OFF; j < end; j += GRP_SZ)
 					{
 						vertex_t vert_end = adj_list[j];
-#ifdef __AGG_MIN__
-						weight_t weight = weight_list[j];
-#endif
+						#ifdef __AGG_MIN__
+							weight_t weight = weight_list[j];
+						#endif
 						feature_t dist = (*edge_compute_push)(frontier,vert_end,
 								level,beg_pos,weight,vert_status, vert_status_prev);
-#ifdef __VOTE__	
-						if(vert_status[vert_end] != dist)
-						{
-							vert_status[vert_end] = dist;
-				            if(my_front_count < BIN_SZ)
+						#ifdef __VOTE__	
+							if(vert_status[vert_end] != dist)
+							{
+								vert_status[vert_end] = dist;
+								if(my_front_count < BIN_SZ)
+								{
+									worklist_bin[bin_off + my_front_count] = vert_end;
+									my_front_count ++;
+									//appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+								}
+								assert(my_front_count < BIN_SZ);
+							}
+						#elif __AGG_MIN__
+                            if(vert_status[vert_end] > dist)
                             {
-                                worklist_bin[bin_off + my_front_count] = vert_end;
-                                my_front_count ++;
-	//						    appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                //atomicMin does not return mininum
+                                //instead the old val, in this case vert_status[vert_end].
+                                
+                                if(atomicMin(vert_status + vert_end, dist)> dist)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off + my_front_count] = vert_end;
+                                        my_front_count ++;
+                                        //appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }
+                                assert(my_front_count < BIN_SZ);
+                                                    }
+                        #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+                            if(vert_status[vert_end] > dist)
+                            {
+                                //atomicMin does not return mininum
+                                //instead the old val, in this case vert_status[vert_end].
+                                if(atomicMin(vert_status + vert_end, dist)> dist)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off + my_front_count] = vert_end;
+                                        my_front_count ++;
+                                        //appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }
+                                assert(my_front_count < BIN_SZ);
                             }
-                            assert(my_front_count < BIN_SZ);
-						}
-#elif __AGG_MIN__
-						if(vert_status[vert_end] > dist)
-						{
-                            //atomicMin does not return mininum
-                            //instead the old val, in this case vert_status[vert_end].
-                             
-                            if(atomicMin(vert_status + vert_end, dist)> dist)
-                                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off + my_front_count] = vert_end;
-                                    my_front_count ++;
-	//						        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }
-                            assert(my_front_count < BIN_SZ);
-						}
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-						if(vert_status[vert_end] > dist)
-						{
-                            //atomicMin does not return mininum
-                            //instead the old val, in this case vert_status[vert_end].
-                            if(atomicMin(vert_status + vert_end, dist)> dist)
-                                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off + my_front_count] = vert_end;
-                                    my_front_count ++;
-	//						        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }
-                            assert(my_front_count < BIN_SZ);
-						}
-#elif __AGG_SUB__
-						if(vert_status[vert_end] > K)
-						{
-							if(atomicSub(vert_status + vert_end, dist) == K + 1)
-				                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off+my_front_count]=vert_end;
-							        my_front_count ++;
-	//						        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }else assert(my_front_count < BIN_SZ);
-                        }
-#endif
+                        #elif __AGG_SUB__
+                            if(vert_status[vert_end] > K)
+                            {
+                                if(atomicSub(vert_status + vert_end, dist) == K + 1)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off+my_front_count]=vert_end;
+                                        my_front_count ++;
+                                        // appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }else assert(my_front_count < BIN_SZ);
+                            }
+                        #endif
 					}
 				}
 			}
@@ -236,59 +236,59 @@ class mapper
 						weight_t weight = weight_list[j];
 						feature_t dist = (*edge_compute_push)(frontier,vert_end,
 								level,beg_pos,weight,vert_status, vert_status_prev);
-#ifdef __VOTE__	
-						if(vert_status[vert_end] != dist)
-						{
-							vert_status[vert_end] = dist;
-				            if(my_front_count < BIN_SZ)
+                        #ifdef __VOTE__	
+                            if(vert_status[vert_end] != dist)
                             {
-                                worklist_bin[bin_off + my_front_count] = vert_end;
-                                my_front_count ++;
-							    appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                vert_status[vert_end] = dist;
+                                if(my_front_count < BIN_SZ)
+                                {
+                                    worklist_bin[bin_off + my_front_count] = vert_end;
+                                    my_front_count ++;
+                                    appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                }
+                                //assert(my_front_count < BIN_SZ);
                             }
-                            //assert(my_front_count < BIN_SZ);
-						}
-#elif __AGG_MIN__
-						if(vert_status[vert_end] > dist)
-						{
-                            //atomicMin does not return mininum
-                            //instead the old val, in this case vert_status[vert_end].
-                            if(atomicMin(vert_status + vert_end, dist)> dist)
-                                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off + my_front_count] = vert_end;
-                                    my_front_count ++;
-							        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }
-                                else overflow_indicator[0] = -1;
-						}
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-						if(vert_status[vert_end] > dist)
-						{
-                            //atomicMin does not return mininum
-                            //instead the old val, in this case vert_status[vert_end].
-                            if(atomicMin(vert_status + vert_end, dist)> dist)
-                                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off + my_front_count] = vert_end;
-                                    my_front_count ++;
-							        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }
-                                else overflow_indicator[0] = -1;
-						}
-#elif __AGG_SUB__
-						if(vert_status[vert_end] > K)
-						{
-							if(atomicSub(vert_status + vert_end, dist) == K + 1)
-				                if(my_front_count < BIN_SZ)
-                                {
-                                    worklist_bin[bin_off+my_front_count]=vert_end;
-							        my_front_count ++;
-							        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
-                                }
-                                else overflow_indicator[0] = -1;
-                        }
-#endif
+                        #elif __AGG_MIN__
+                            if(vert_status[vert_end] > dist)
+                            {
+                                //atomicMin does not return mininum
+                                //instead the old val, in this case vert_status[vert_end].
+                                if(atomicMin(vert_status + vert_end, dist)> dist)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off + my_front_count] = vert_end;
+                                        my_front_count ++;
+                                        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }
+                                    else overflow_indicator[0] = -1;
+                            }
+                        #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+                            if(vert_status[vert_end] > dist)
+                            {
+                                //atomicMin does not return mininum
+                                //instead the old val, in this case vert_status[vert_end].
+                                if(atomicMin(vert_status + vert_end, dist)> dist)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off + my_front_count] = vert_end;
+                                        my_front_count ++;
+                                        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }
+                                    else overflow_indicator[0] = -1;
+                            }
+                        #elif __AGG_SUB__
+                            if(vert_status[vert_end] > K)
+                            {
+                                if(atomicSub(vert_status + vert_end, dist) == K + 1)
+                                    if(my_front_count < BIN_SZ)
+                                    {
+                                        worklist_bin[bin_off+my_front_count]=vert_end;
+                                        my_front_count ++;
+                                        appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
+                                    }
+                                    else overflow_indicator[0] = -1;
+                            }
+                        #endif
 					}
 				}
 
@@ -322,46 +322,46 @@ class mapper
 						weight_t weight = weight_list[j];
 						feature_t dist = (*edge_compute_pull)(vert_src, frontier,
 								level,beg_pos,weight,vert_status, vert_status_prev);
-#ifdef __VOTE__
-						if(dist == level && vert_status[frontier] == INFTY)
-						{
-                            appr_work ++;
-							vert_status[frontier] = level + 1;
-							break;
-						}
-#elif __AGG_SUM_AND_RATIO_
-						frontier_vert_status += dist;
-#elif __AGG_SUM__
-						frontier_vert_status += dist;
-#elif __AGG_SUB__
-						frontier_vert_status -= dist;
-#elif __AGG_MIN__
-						if(frontier_vert_status > dist) frontier_vert_status = dist;
+                        #ifdef __VOTE__
+                            if(dist == level && vert_status[frontier] == INFTY)
+                            {
+                                appr_work ++;
+                                vert_status[frontier] = level + 1;
+                                break;
+                            }
+                        #elif __AGG_SUM_AND_RATIO_
+                            frontier_vert_status += dist;
+                        #elif __AGG_SUM__
+                            frontier_vert_status += dist;
+                        #elif __AGG_SUB__
+                            frontier_vert_status -= dist;
+                        #elif __AGG_MIN__
+                            if(frontier_vert_status > dist) frontier_vert_status = dist;
 
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-                        if(atomicMin(vert_status+frontier, dist) > dist) 
+                        #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+                            if(atomicMin(vert_status+frontier, dist) > dist) 
+                            {
+                                appr_work ++;
+                            }
+                        #endif
+					}
+                    #ifdef __AGG_SUM__
+                        vert_status[frontier] = frontier_vert_status;
+                        appr_work ++;
+                    #elif __AGG_SUM_AND_RATIO__					
+                        vert_status[frontier] = (0.15 + 0.85 * frontier_vert_status)
+                            /(beg_pos[frontier + 1] - beg_pos[frontier]);
+                        appr_work++;
+                    #elif  __AGG_SUB__
+                        vert_status[frontier] -= frontier_vert_status;
+                        appr_work ++;
+                    #elif __AGG_MIN__
+                        if(vert_status[frontier] > frontier_vert_status) 
                         {
                             appr_work ++;
+                            vert_status[frontier] = frontier_vert_status;
                         }
-#endif
-					}
-#ifdef __AGG_SUM__
-					vert_status[frontier] = frontier_vert_status;
-                    appr_work ++;
-#elif __AGG_SUM_AND_RATIO__					
-                    vert_status[frontier] = (0.15 + 0.85 * frontier_vert_status)
-						/(beg_pos[frontier + 1] - beg_pos[frontier]);
-                    appr_work++;
-#elif  __AGG_SUB__
-					vert_status[frontier] -= frontier_vert_status;
-                    appr_work ++;
-#elif __AGG_MIN__
-					if(vert_status[frontier] > frontier_vert_status) 
-                    {
-                        appr_work ++;
-						vert_status[frontier] = frontier_vert_status;
-                    }
-#endif
+                    #endif
 				}
 				//note, we use cat_thd_count to store the future amount of workload
 				//and such data is important for switching between push - pull models.
@@ -405,82 +405,80 @@ class mapper
 							dist = (*edge_compute_pull)(vert_src, frontier,
 								level,beg_pos,weight,vert_status, vert_status_prev);
 						}
-#ifdef __VOTE__ 		
-						int predicate = (dist == level) * (j < end);
-                        //-----------This is coded to test Gunrock drawbacks----------
-                        //- Because gunrock does not defer udpates, it cannot do 
-                        //- collaborative early termination.
-                        //if(predicate!=0)
-                        //{
-                        //    vert_status[frontier] = level +1;
-                        //    appr_work ++;
-                        //    break;
-                        //}
-                        //-----------------------------------
+                        #ifdef __VOTE__ 		
+                            int predicate = (dist == level) * (j < end);
+                            //-----------This is coded to test Gunrock drawbacks----------
+                            //- Because gunrock does not defer udpates, it cannot do 
+                            //- collaborative early termination.
+                            //if(predicate!=0)
+                            //{
+                            //    vert_status[frontier] = level +1;
+                            //    appr_work ++;
+                            //    break;
+                            //}
+                            //-----------------------------------
 
-						if(__any(predicate))
-						{
-							if(!WOFF) vert_status[frontier] = level + 1;
-							appr_work ++;
-                            break;
-						}
-#elif __AGG_SUM__
-						frontier_vert_status += dist;
-#elif __AGG_SUM_AND_RATIO__
-						frontier_vert_status += dist;
-#elif __AGG_SUB__
-						frontier_vert_status -= dist;
-#elif __AGG_MIN__
-						if(frontier_vert_status > dist) frontier_vert_status = dist;
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-                        if(atomicMin(vert_status+frontier, dist) > dist) 
-                        {
-                            appr_work ++;
-                        }
-#endif
+                            if(__any(predicate))
+                            {
+                                if(!WOFF) vert_status[frontier] = level + 1;
+                                appr_work ++;
+                                break;
+                            }
+                        #elif __AGG_SUM__
+                            frontier_vert_status += dist;
+                        #elif __AGG_SUM_AND_RATIO__
+                            frontier_vert_status += dist;
+                        #elif __AGG_SUB__
+                            frontier_vert_status -= dist;
+                        #elif __AGG_MIN__
+                            if(frontier_vert_status > dist) frontier_vert_status = dist;
+                        #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+                            if(atomicMin(vert_status+frontier, dist) > dist) 
+                            {
+                                appr_work ++;
+                            }
+                        #endif
 					}
-#ifdef __AGG_SUM__
-					for (int j=16; j>=1; j>>=1)
-						frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
-					if(!WOFF)
-                    {
-                        vert_status[frontier] = frontier_vert_status;
-                        appr_work ++;
-                    }
-#elif __AGG_SUM_AND_RATIO__					
-                    for (int j=16; j>=1; j>>=1)
-						frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
-					if(!WOFF)
-                    {
-                        vert_status[frontier] = (0.15 + 0.85*frontier_vert_status)
-							/(beg_pos[frontier+1]-beg_pos[frontier]);
-                        appr_work ++;
-                    }
-#elif __AGG_MIN__
-					feature_t tmp;
-					for (int j=16; j>=1; j>>=1)
-					{
-						tmp = __shfl_xor(frontier_vert_status, j, 32);
-						if(frontier_vert_status > tmp) frontier_vert_status = tmp;
-					}
-					
-					if(!WOFF) 
-						if( vert_status[frontier] > frontier_vert_status)
+                    #ifdef __AGG_SUM__
+                        for (int j=16; j>=1; j>>=1)
+                            frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
+                        if(!WOFF)
                         {
                             vert_status[frontier] = frontier_vert_status;
                             appr_work ++;
                         }
-
-#elif __AGG_SUB__
-					for (int j=16; j>=1; j>>=1)
-						frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
-					if(!WOFF)
-                    {
-						vert_status[frontier]+=frontier_vert_status;
-                        appr_work ++;
-                    }
-
-#endif
+                    #elif __AGG_SUM_AND_RATIO__					
+                        for (int j=16; j>=1; j>>=1)
+                            frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
+                        if(!WOFF)
+                        {
+                            vert_status[frontier] = (0.15 + 0.85*frontier_vert_status)
+                                /(beg_pos[frontier+1]-beg_pos[frontier]);
+                            appr_work ++;
+                        }
+                    #elif __AGG_MIN__
+                        feature_t tmp;
+                        for (int j=16; j>=1; j>>=1)
+                        {
+                            tmp = __shfl_xor(frontier_vert_status, j, 32);
+                            if(frontier_vert_status > tmp) frontier_vert_status = tmp;
+                        }
+                        
+                        if(!WOFF) 
+                            if( vert_status[frontier] > frontier_vert_status)
+                            {
+                                vert_status[frontier] = frontier_vert_status;
+                                appr_work ++;
+                            }
+                    #elif __AGG_SUB__
+                        for (int j=16; j>=1; j>>=1)
+                            frontier_vert_status += __shfl_xor(frontier_vert_status, j, 32);
+                        if(!WOFF)
+                        {
+                            vert_status[frontier]+=frontier_vert_status;
+                            appr_work ++;
+                        }
+                    #endif
 				}
 				//note, we use cat_thd_count to store the future amount of workload
 				//and such data is important for switching between push - pull models.
@@ -522,123 +520,123 @@ class mapper
 								level,beg_pos,weight,vert_status, vert_status_prev);
 						}
 						
-#ifdef __VOTE__ 
-						int predicate = (dist == level) * (j < end);
-                        //-----------This is coded to test Gunrock drawbacks----------
-                        //- Because gunrock does not defer udpates, it cannot do 
-                        //- collaborative early termination.
-                        //if(predicate!=0)
-                        //{
-                        //    vert_status[frontier] = level +1;
-                        //    appr_work ++;
-                        //    break;
-                        //}
-					    //-------------------
+                        #ifdef __VOTE__ 
+                            int predicate = (dist == level) * (j < end);
+                            //-----------This is coded to test Gunrock drawbacks----------
+                            //- Because gunrock does not defer udpates, it cannot do 
+                            //- collaborative early termination.
+                            //if(predicate!=0)
+                            //{
+                            //    vert_status[frontier] = level +1;
+                            //    appr_work ++;
+                            //    break;
+                            //}
+                            //-------------------
 
-						if(__syncthreads_or(predicate))
-						{
-                            if(!threadIdx.x) vert_status[frontier]= level + 1;
-                            appr_work ++;
-							break;
-						}
-#elif __AGG_SUM__
-						frontier_vert_status+=dist;
-#elif __AGG_SUM_AND_RATIO__
-						frontier_vert_status+=dist;
-#elif __AGG_SUB__
-						frontier_vert_status-=dist;
-#elif __AGG_MIN__
-						if(frontier_vert_status > dist) frontier_vert_status = dist;
-#elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
-                        if(atomicMin(vert_status+frontier, dist) > dist) 
+                            if(__syncthreads_or(predicate))
+                            {
+                                if(!threadIdx.x) vert_status[frontier]= level + 1;
+                                appr_work ++;
+                                break;
+                            }
+                        #elif __AGG_SUM__
+                            frontier_vert_status+=dist;
+                        #elif __AGG_SUM_AND_RATIO__
+                            frontier_vert_status+=dist;
+                        #elif __AGG_SUB__
+                            frontier_vert_status-=dist;
+                        #elif __AGG_MIN__
+                            if(frontier_vert_status > dist) frontier_vert_status = dist;
+                        #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
+                            if(atomicMin(vert_status+frontier, dist) > dist) 
+                            {
+                                appr_work ++;
+                            }
+                        #endif
+					}
+
+                    #ifdef __AGG_SUM__
+                        smem[threadIdx.x]=frontier_vert_status;
+                        __syncthreads();
+                        int idx=blockDim.x>>1;
+                        while(idx)
                         {
+                            if(threadIdx.x<idx)
+                                smem[threadIdx.x]+=smem[threadIdx.x+idx];
+
+                            __syncthreads();
+                            idx>>=1;
+                        }
+                        __syncthreads();
+
+                        if(threadIdx.x==0)
+                        {
+                            vert_status[frontier]=smem[0];
                             appr_work ++;
                         }
-#endif
-					}
 
-#ifdef __AGG_SUM__
-					smem[threadIdx.x]=frontier_vert_status;
-					__syncthreads();
-					int idx=blockDim.x>>1;
-					while(idx)
-					{
-						if(threadIdx.x<idx)
-							smem[threadIdx.x]+=smem[threadIdx.x+idx];
-
-						__syncthreads();
-						idx>>=1;
-					}
-					__syncthreads();
-
-					if(threadIdx.x==0)
-                    {
-                        vert_status[frontier]=smem[0];
-                        appr_work ++;
-                    }
-
-#elif __AGG_SUM_AND_RATIO__
-					smem[threadIdx.x]=frontier_vert_status;
-					__syncthreads();
-					int idx=blockDim.x>>1;
-					while(idx)
-					{
-						if(threadIdx.x<idx)
-							smem[threadIdx.x]+=smem[threadIdx.x+idx];
-
-						__syncthreads();
-						idx>>=1;
-					}
-					__syncthreads();
-
-					if(threadIdx.x==0)
-                    {
-                        vert_status[frontier]=(0.15 + 0.85*smem[0])
-							/(beg_pos[frontier+1]-beg_pos[frontier]);
-                        appr_work ++;
-                    }
-
-#elif __AGG_MIN__
-					smem[threadIdx.x]=frontier_vert_status;
-					__syncthreads();
-					int idx=blockDim.x>>1;
-					while(idx)
-					{
-						if(threadIdx.x<idx)
-							if(smem[threadIdx.x] > smem[threadIdx.x+idx])
-								smem[threadIdx.x] = smem[threadIdx.x+idx];
-
-						__syncthreads();
-						idx>>=1;
-					}
-					__syncthreads();
-
-					if(threadIdx.x==0) 
-						if(vert_status[frontier] > smem[0])
+                    #elif __AGG_SUM_AND_RATIO__
+                        smem[threadIdx.x]=frontier_vert_status;
+                        __syncthreads();
+                        int idx=blockDim.x>>1;
+                        while(idx)
                         {
-                            vert_status[frontier] = smem[0];
+                            if(threadIdx.x<idx)
+                                smem[threadIdx.x]+=smem[threadIdx.x+idx];
+
+                            __syncthreads();
+                            idx>>=1;
+                        }
+                        __syncthreads();
+
+                        if(threadIdx.x==0)
+                        {
+                            vert_status[frontier]=(0.15 + 0.85*smem[0])
+                                /(beg_pos[frontier+1]-beg_pos[frontier]);
                             appr_work ++;
                         }
-#elif __AGG_SUB__
-					smem[threadIdx.x]=frontier_vert_status;
-					__syncthreads();
-					int idx=blockDim.x>>1;
-					while(idx)
-					{
-						if(threadIdx.x<idx)
-							smem[threadIdx.x]+=smem[threadIdx.x+idx];
 
-						__syncthreads();
-						idx>>=1;
-					}
-					__syncthreads();
+                    #elif __AGG_MIN__
+                        smem[threadIdx.x]=frontier_vert_status;
+                        __syncthreads();
+                        int idx=blockDim.x>>1;
+                        while(idx)
+                        {
+                            if(threadIdx.x<idx)
+                                if(smem[threadIdx.x] > smem[threadIdx.x+idx])
+                                    smem[threadIdx.x] = smem[threadIdx.x+idx];
 
-					if(threadIdx.x==0)
-                    {
-                        vert_status[frontier]+=smem[0];
-                        appr_work ++;
-                    }
-#endif
+                            __syncthreads();
+                            idx>>=1;
+                        }
+                        __syncthreads();
+
+                        if(threadIdx.x==0) 
+                            if(vert_status[frontier] > smem[0])
+                            {
+                                vert_status[frontier] = smem[0];
+                                appr_work ++;
+                            }
+                    #elif __AGG_SUB__
+                        smem[threadIdx.x]=frontier_vert_status;
+                        __syncthreads();
+                        int idx=blockDim.x>>1;
+                        while(idx)
+                        {
+                            if(threadIdx.x<idx)
+                                smem[threadIdx.x]+=smem[threadIdx.x+idx];
+
+                            __syncthreads();
+                            idx>>=1;
+                        }
+                        __syncthreads();
+
+                        if(threadIdx.x==0)
+                        {
+                            vert_status[frontier]+=smem[0];
+                            appr_work ++;
+                        }
+                    #endif
 				}
 				//note, we use cat_thd_count to store the future amount of workload
 				//and such data is important for switching between push - pull models.

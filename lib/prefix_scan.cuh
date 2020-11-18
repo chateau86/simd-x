@@ -45,19 +45,19 @@ __forceinline__ __device__ void _grid_sum(
 	smem[threadIdx.x] = input;
 	__syncthreads();
 
-//	if (blockDim.x >= 1024) {if (threadIdx.x < 512) smem[threadIdx.x] += smem[threadIdx.x + 512]; __syncthreads();}
-//	if (blockDim.x >= 512) {if (threadIdx.x < 256) smem[threadIdx.x] += smem[threadIdx.x + 256]; __syncthreads();}
-//	if (blockDim.x >= 256) {if (threadIdx.x < 128) smem[threadIdx.x] += smem[threadIdx.x + 128]; __syncthreads();}
-//	if (blockDim.x >= 128) {if (threadIdx.x < 64) smem[threadIdx.x] += smem[threadIdx.x + 64]; __syncthreads();}
-//	if(threadIdx.x < 32)
-//	{
-//		if (blockDim.x >= 64) smem[threadIdx.x] += smem[threadIdx.x + 32];
-//		if (blockDim.x >= 32) smem[threadIdx.x] += smem[threadIdx.x + 16];
-//		if (blockDim.x >= 16) smem[threadIdx.x] += smem[threadIdx.x + 8];
-//		if (blockDim.x >= 8) smem[threadIdx.x] += smem[threadIdx.x + 4];
-//		if (blockDim.x >= 4) smem[threadIdx.x] += smem[threadIdx.x + 2];
-//		if (blockDim.x >= 2) smem[threadIdx.x] += smem[threadIdx.x + 1];
-//	}
+	//	if (blockDim.x >= 1024) {if (threadIdx.x < 512) smem[threadIdx.x] += smem[threadIdx.x + 512]; __syncthreads();}
+	//	if (blockDim.x >= 512) {if (threadIdx.x < 256) smem[threadIdx.x] += smem[threadIdx.x + 256]; __syncthreads();}
+	//	if (blockDim.x >= 256) {if (threadIdx.x < 128) smem[threadIdx.x] += smem[threadIdx.x + 128]; __syncthreads();}
+	//	if (blockDim.x >= 128) {if (threadIdx.x < 64) smem[threadIdx.x] += smem[threadIdx.x + 64]; __syncthreads();}
+	//	if(threadIdx.x < 32)
+	//	{
+	//		if (blockDim.x >= 64) smem[threadIdx.x] += smem[threadIdx.x + 32];
+	//		if (blockDim.x >= 32) smem[threadIdx.x] += smem[threadIdx.x + 16];
+	//		if (blockDim.x >= 16) smem[threadIdx.x] += smem[threadIdx.x + 8];
+	//		if (blockDim.x >= 8) smem[threadIdx.x] += smem[threadIdx.x + 4];
+	//		if (blockDim.x >= 4) smem[threadIdx.x] += smem[threadIdx.x + 2];
+	//		if (blockDim.x >= 2) smem[threadIdx.x] += smem[threadIdx.x + 1];
+	//	}
 
     int idx=blockDim.x>>1;
     while(idx)
@@ -492,7 +492,7 @@ __host__ void prefix_scan(
 		 THD_NUM
 		);
 
-//	cudaDeviceSynchronize();
+	//	cudaDeviceSynchronize();
 	__prefix_post_scan<data_t, index_t>
 		<<<BLK_NUM, THD_NUM, (padding+(THD_NUM<<1))*sz, stream>>>
 		(

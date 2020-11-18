@@ -4,8 +4,10 @@
 #include "util.h"
 #include "gpu_graph.cuh"
 #include "meta_data.cuh"
+#include "float_hax.cuh"
 #include <assert.h>
-typedef feature_t (*cb_mapper)
+//typedef feature_t (*cb_mapper)
+typedef data_return_t (*cb_mapper)
 (	vertex_t 		active_edge_src,
 	vertex_t		active_edge_end,
 	feature_t		level,
@@ -26,7 +28,8 @@ class mapper
 		index_t *beg_pos;
 		index_t vert_count;
 		feature_t *vert_status;
-		feature_t *vert_status_prev;
+        feature_t *vert_status_prev;
+        data_out_cell_t *vert_data_out;
 
 		//index_t *cat_thd_count_sml;
 		cb_mapper edge_compute; 
@@ -44,7 +47,8 @@ class mapper
 			beg_pos = ggraph.beg_pos;
 			vert_count = ggraph.vert_count;
 			vert_status = mdata.vert_status;
-			vert_status_prev = mdata.vert_status_prev;
+            vert_status_prev = mdata.vert_status_prev;
+            vert_data_out = mdata.vert_data_out;
 			//cat_thd_count_sml = mdata.cat_thd_count_sml;
 
 			edge_compute_push = user_mapper_push;
@@ -81,8 +85,9 @@ class mapper
 					{
 						vertex_t vert_end = adj_list[j];
 						weight = weight_list[j];
-						feature_t dist = (*edge_compute_push)(frontier,vert_end,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+						data_return_t dist_ret = (*edge_compute_push)(frontier,vert_end,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                        feature_t dist = dist_ret.feature;
 						#ifdef __VOTE__
 							if(vert_status[vert_end] != dist)
 							{
@@ -147,8 +152,10 @@ class mapper
 						#ifdef __AGG_MIN__
 							weight_t weight = weight_list[j];
 						#endif
-						feature_t dist = (*edge_compute_push)(frontier,vert_end,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+						data_return_t dist_ret = (*edge_compute_push)(frontier,vert_end,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                        feature_t dist = dist_ret.feature;
+                        //data_out_cell_t data = dist_ret.data_out;
 						#ifdef __VOTE__	
 							if(vert_status[vert_end] != dist)
 							{
@@ -167,15 +174,22 @@ class mapper
                                 //atomicMin does not return mininum
                                 //instead the old val, in this case vert_status[vert_end].
                                 
-                                if(atomicMin(vert_status + vert_end, dist)> dist)
+                                //!!! atomicMin does the write!!!
+                                //TODO: What if we also sort by route
+                                feature_t old_dist = atomicMin(vert_status + vert_end, dist);
+                                if(old_dist > dist){
+                                    vert_data_out[vert_end] = dist_ret.data_out;
                                     if(my_front_count < BIN_SZ)
                                     {
                                         worklist_bin[bin_off + my_front_count] = vert_end;
                                         my_front_count ++;
                                         //appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
                                     }
+                                } else if (old_dist == dist) {
+                                    atomicMin(vert_data_out+vert_end, dist_ret.data_out);
+                                }
                                 assert(my_front_count < BIN_SZ);
-                                                    }
+                            }
                         #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
                             if(vert_status[vert_end] > dist)
                             {
@@ -234,8 +248,9 @@ class mapper
 					{
 						vertex_t vert_end = adj_list[j];
 						weight_t weight = weight_list[j];
-						feature_t dist = (*edge_compute_push)(frontier,vert_end,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+						data_return_t dist_ret = (*edge_compute_push)(frontier,vert_end,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                        feature_t dist = dist_ret.feature;
                         #ifdef __VOTE__	
                             if(vert_status[vert_end] != dist)
                             {
@@ -315,13 +330,15 @@ class mapper
 					vertex_t frontier = worklist[i];
 					index_t beg = beg_pos[frontier];
 					index_t end = beg_pos[frontier+1];
-					feature_t frontier_vert_status = INFTY;
+                    feature_t frontier_vert_status = INFTY;
+                    data_out_cell_t frontier_data_out = -1;
 					for(index_t j = beg; j < end; j ++)
 					{
 						vertex_t vert_src = adj_list[j];
 						weight_t weight = weight_list[j];
-						feature_t dist = (*edge_compute_pull)(vert_src, frontier,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+						data_return_t dist_ret = (*edge_compute_pull)(vert_src, frontier,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                        feature_t dist = dist_ret.feature;
                         #ifdef __VOTE__
                             if(dist == level && vert_status[frontier] == INFTY)
                             {
@@ -336,7 +353,10 @@ class mapper
                         #elif __AGG_SUB__
                             frontier_vert_status -= dist;
                         #elif __AGG_MIN__
-                            if(frontier_vert_status > dist) frontier_vert_status = dist;
+                            if(frontier_vert_status > dist) {
+                                frontier_vert_status = dist;
+                                frontier_data_out = dist_ret.data_out;
+                            }
 
                         #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
                             if(atomicMin(vert_status+frontier, dist) > dist) 
@@ -360,6 +380,8 @@ class mapper
                         {
                             appr_work ++;
                             vert_status[frontier] = frontier_vert_status;
+                            vert_data_out[frontier] = frontier_data_out;
+                            //vert_data_out[frontier] = -123;
                         }
                     #endif
 				}
@@ -387,7 +409,8 @@ class mapper
 					vertex_t frontier = worklist[i];
 					index_t beg = beg_pos[frontier];
 					index_t end = beg_pos[frontier+1];
-					feature_t frontier_vert_status=INFTY;
+                    feature_t frontier_vert_status=INFTY;
+                    data_out_cell_t frontier_data_out = -1;
 					
                     //-----------This is coded to test Gunrock drawbacks----------
                     //- Because gunrock does not defer udpates, it cannot do 
@@ -397,13 +420,16 @@ class mapper
 
 					for(index_t j = beg + WOFF; __any(j < end); j += 32)
 					{
-						feature_t dist = INFTY;
+                        feature_t dist = INFTY;
+                        data_out_cell_t data = -1;
 						if(j<end)
 						{
 							vertex_t vert_src=adj_list[j];
 							weight_t weight = weight_list[j];
-							dist = (*edge_compute_pull)(vert_src, frontier,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+							data_return_t dist_ret = (*edge_compute_pull)(vert_src, frontier,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                            dist = dist_ret.feature;
+                            data = dist_ret.data_out;
 						}
                         #ifdef __VOTE__ 		
                             int predicate = (dist == level) * (j < end);
@@ -431,7 +457,10 @@ class mapper
                         #elif __AGG_SUB__
                             frontier_vert_status -= dist;
                         #elif __AGG_MIN__
-                            if(frontier_vert_status > dist) frontier_vert_status = dist;
+                            if(frontier_vert_status > dist) {
+                                frontier_vert_status = dist;
+                                frontier_data_out = data;
+                            }
                         #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update
                             if(atomicMin(vert_status+frontier, dist) > dist) 
                             {
@@ -468,6 +497,7 @@ class mapper
                             if( vert_status[frontier] > frontier_vert_status)
                             {
                                 vert_status[frontier] = frontier_vert_status;
+                                vert_data_out[frontier] = frontier_data_out;
                                 appr_work ++;
                             }
                     #elif __AGG_SUB__
@@ -516,8 +546,9 @@ class mapper
 						{
 							vertex_t vert_src=adj_list[j];
 							weight_t weight = weight_list[j];
-							dist =(*edge_compute_pull)(vert_src, frontier,
-								level,beg_pos,weight,vert_status, vert_status_prev);
+							data_return_t dist_ret =(*edge_compute_pull)(vert_src, frontier,
+                                level,beg_pos,weight,vert_status, vert_status_prev);
+                            dist = dist_ret.feature;
 						}
 						
                         #ifdef __VOTE__ 

@@ -1,10 +1,11 @@
 exe=sssp_routing_optimal.bin
 
 ldflags	= -I../../../lib/ -I. -I../../../cpu_alg/
+# commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\# 
 commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\# 
 cucc= "$(shell which nvcc)"
 cc= "$(shell which gcc)"
-cuflags= -arch=sm_35  $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
+cuflags= -arch=sm_61  $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
 cuflags += -D__AGG_MIN__
 
 ifeq ($(monitor), 1)

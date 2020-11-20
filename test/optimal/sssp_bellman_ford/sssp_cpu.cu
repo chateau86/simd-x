@@ -249,6 +249,11 @@ int main(int args, char **argv)
 
     double total_time = 0;
 
+    if(ginst->vert_count >= (1<<15)) {
+        printf("***Vertex count > 2**15 may result in segfault from array address exceeding 2**32.\n");
+        printf("***Proceed at your own risk!\n");
+    }
+
 
     feature_t *vert_status;
     data_out_cell_t *vert_data_out;

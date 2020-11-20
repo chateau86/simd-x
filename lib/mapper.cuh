@@ -185,9 +185,9 @@ class mapper
                                         my_front_count ++;
                                         //appr_work += beg_pos[vert_end + 1] - beg_pos[vert_end];
                                     }
-                                } else if (old_dist == dist) {
+                                } /*else if (old_dist == dist) {
                                     atomicMin(vert_data_out+vert_end, dist_ret.data_out);
-                                }
+                                }*/
                                 assert(my_front_count < BIN_SZ);
                             }
                         #elif __AGG_MIN_ATOMIC__ //Collect compute-combine benefits over compute-direct-update

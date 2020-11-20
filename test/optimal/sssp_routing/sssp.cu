@@ -230,16 +230,20 @@ int main(int args, char **argv)
 							);
 							printf("\tG: ");
 							vertex_t current = i;
-							while(current != -1) {
+							int limit = 20;
+							while(current != -1 && limit > 0) {
 								printf("%d->", current);
 								current = gpu_routes[current];
+								limit--;
 							}
 							printf("\n");
 							printf("\tC: ");
 							current = i;
-							while(current != -1) {
+							limit = 20;
+							while(current != -1 && limit > 0) {
 								printf("%d->", current);
 								current = cpu_routes[current];
+								limit--;
 							}
 							printf("\n");
 						}

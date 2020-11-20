@@ -1,4 +1,22 @@
 -----
+Custom modifications from upstream
+-----
+- Reindented a bunch of stuff because VSCode _hates_ ifdefs that starts on first column inside indented blocks.
+- `sssp_routing` built into APSP test based on original `sssp_high_diameter`.
+- Atomic float comparision hack added.
+- Added vert_data_out for SSSP routing table output.
+- Removed _massive_ device memory leak from improper metadata lifecycle. Kernels can be launched more than once per program now.
+
+**NOTE**: 
+Due to time constrains, these items are left in a known-broken state:
+- Only those code path used by `sssp_routing` were modified for proper operation.
+Other codepaths are only duct-taped together to compile. `vert_data_out` and related additions WILL NOT WORK CORRECTLY ELSEWHERE.
+- Graph traversal is done in reverse. (Each iteration compute SSSP _to_ selected node.) This is only fine in undirected graph.
+- Routing is in `[to_target][from_start] = next_node` format for simpler interface with existing code.
+
+Also, the `invert` flag in `text_to_bin` _actually_ means double up the edges.
+
+-----
 Software requirement
 -----
 gcc 4.4.7 or higher 

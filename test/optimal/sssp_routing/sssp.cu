@@ -8,7 +8,7 @@
 #include "meta_data.cuh"
 #include "mapper_enactor.cuh"
 #include "reducer_enactor.cuh"
-#include "cpu_sssp.hpp"
+#include "cpu_sssp_route.hpp"
 
 /*user defined vertex behavior function*/
 __inline__ __host__ __device__ feature_t user_mapper_push(
@@ -20,7 +20,9 @@ __inline__ __host__ __device__ feature_t user_mapper_push(
     feature_t* vert_status,
     feature_t* vert_status_prev
 ){
-	return vert_status[src] + edge_weight;
+	feature_t dist = (vert_status[src]>>32) + edge_weight;
+	return (dist<<32) + src;
+	//return dist;
 } 
 
 /*user defined vertex behavior function*/
@@ -46,7 +48,9 @@ __inline__ __host__ __device__ feature_t user_mapper_pull(
     feature_t* vert_status_prev
 ){
 	//return vert_status[src] + edge_weight;
-	return vert_status[src] + edge_weight;
+	feature_t dist = (vert_status[src]>>32) + edge_weight;
+	return (dist<<32) + src;
+	//return dist;
 }
 
 /*user defined vertex behavior function*/
@@ -77,7 +81,8 @@ init(vertex_t src_v, vertex_t vert_count, meta_data mdata)
 			mdata.vert_status[tid] = INFTY;
 			mdata.vert_status_prev[tid] = INFTY;
 		} else {
-			mdata.vert_status[tid] = 0;
+			mdata.vert_status[tid] = ((1<<31) - 1);
+			//mdata.vert_status[tid] = 1;
 			mdata.vert_status_prev[tid] = INFTY;
 			
 			mdata.worklist_mid[0] = src_v;
@@ -87,6 +92,18 @@ init(vertex_t src_v, vertex_t vert_count, meta_data mdata)
 			//mdata.bitmap[src_v>>3] |= (1<<(src_v & 7));
 		}
 		tid += blockDim.x * gridDim.x;
+	}
+}
+
+void unpack_cpu_dist(
+	feature_t* packed_cpu,
+	feature_t* unpacked_dist,
+	vertex_t* unpacked_route,
+	vertex_t count
+){
+	for(vertex_t i = 0; i < count; i++) {
+		unpacked_dist[i] = (packed_cpu[i] >> 32);
+		unpacked_route[i] = (packed_cpu[i] & ((1<<32) - 1));
 	}
 }
 
@@ -130,43 +147,60 @@ int main(int args, char **argv)
 	cudaMemcpyFromSymbol(&vert_behave_push_h,vert_behave_push_d,sizeof(cb_reducer));
 	cudaMemcpyFromSymbol(&vert_behave_pull_h,vert_behave_pull_d,sizeof(cb_reducer));
 	
-	//Init three data structures
-	gpu_graph ggraph(ginst);
-	meta_data mdata(ginst->vert_count, ginst->edge_count);
-    Barrier global_barrier(BLKS_NUM);
-    
-	init<<<256,256>>>(src_v, ginst->vert_count, mdata);
-	mapper compute_mapper(ggraph, mdata, vert_behave_push_h, vert_behave_pull_h);
-	reducer worklist_gather(ggraph, mdata, vert_selector_push_h, vert_selector_pull_h);
-	H_ERR(cudaThreadSynchronize());
-	
-	double time = wtime();
+	for(vertex_t st = 0; st < ginst->vert_count; st++) {
+		//Init three data structures
+		printf("---at node %d---\n", st);
+		gpu_graph ggraph(ginst);
+		meta_data mdata(ginst->vert_count, ginst->edge_count);
+		Barrier global_barrier(BLKS_NUM);
+		
+		init<<<256,256>>>(st, ginst->vert_count, mdata);
+		mapper compute_mapper(ggraph, mdata, vert_behave_push_h, vert_behave_pull_h);
+		reducer worklist_gather(ggraph, mdata, vert_selector_push_h, vert_selector_pull_h);
+		H_ERR(cudaThreadSynchronize());
+		
+		double time = wtime();
 
-	//* necessary for high diameter graph, e.g., euro.osm and roadnet.ca
-	mapper_merge_push(blk_size, level, ggraph, mdata, compute_mapper, worklist_gather, global_barrier);
+		//* necessary for high diameter graph, e.g., euro.osm and roadnet.ca
+		mapper_merge_push(blk_size, level, ggraph, mdata, compute_mapper, worklist_gather, global_barrier);
+		H_ERR(cudaThreadSynchronize());
+		
+		time = wtime() - time;
+		std::cout<<"Total time: "<<time<<" second(s).\n";
+		
+		cudaMemcpy(level_h, level, sizeof(feature_t), cudaMemcpyDeviceToHost);	
+		std::cout<<"Total iteration: "<<level_h[0]<<"\n";
+		
+		feature_t *packed_gpu_dist = new feature_t[ginst->vert_count];
+		H_ERR(cudaMemcpy(packed_gpu_dist, mdata.vert_status, 
+				sizeof(feature_t) * ginst->vert_count, cudaMemcpyDeviceToHost));
 
-	time = wtime() - time;
-	std::cout<<"Total time: "<<time<<" second(s).\n";
-	
-	cudaMemcpy(level_h, level, sizeof(feature_t), cudaMemcpyDeviceToHost);	
-    std::cout<<"Total iteration: "<<level_h[0]<<"\n";
-    
-    feature_t *gpu_dist = new feature_t[ginst->vert_count];
-    cudaMemcpy(gpu_dist, mdata.vert_status, 
-            sizeof(feature_t) * ginst->vert_count, cudaMemcpyDeviceToHost);
+		feature_t *unpacked_gpu_dist = new feature_t[ginst->vert_count];
+		vertex_t *unpacked_gpu_route = new vertex_t[ginst->vert_count];
+		unpack_cpu_dist(packed_gpu_dist, unpacked_gpu_dist, unpacked_gpu_route, ginst->vert_count);
 
-    feature_t *cpu_dist;
-    cpu_sssp<index_t, vertex_t, weight_t, feature_t>
-        (cpu_dist, src_v, ginst->vert_count, ginst->edge_count, ginst->beg_pos,
-         ginst->adj_list, ginst->weight);
-    if (memcmp(cpu_dist, gpu_dist, sizeof(feature_t) * ginst->vert_count) == 0) {
-        printf("Result correct\n");
-    } else {
-        printf("Result wrong!\n");
-        for(int i = 0; i < 10; i ++) {
-            std::cout<<gpu_dist[i]<<" "<<cpu_dist[i]<<"\n";
-        }
-    }
-    delete[]  gpu_dist;
-    delete[] cpu_dist;
+		feature_t *cpu_dist;
+		vertex_t *cpu_routes;
+		cpu_sssp<index_t, vertex_t, weight_t, feature_t>
+			(cpu_dist, cpu_routes, st, ginst->vert_count, ginst->edge_count, ginst->beg_pos,
+			ginst->adj_list, ginst->weight);
+
+		if (memcmp(cpu_dist, unpacked_gpu_dist, sizeof(feature_t) * ginst->vert_count) == 0) {
+			printf("Distance result correct\n");
+		} else {
+			printf("Distance result wrong!\n");
+			printf("GPU - CPU\n");
+			for(int i = 0; i < ginst->vert_count; i ++) {
+				if(unpacked_gpu_dist[i] != cpu_dist[i]) {
+					printf("%d: %d - %d\n", i, unpacked_gpu_dist[i], cpu_dist[i]);
+				}
+			}
+			break;
+		}
+		delete[]  packed_gpu_dist;
+		delete[]  unpacked_gpu_dist;
+		delete[]  unpacked_gpu_route;
+		delete[] cpu_dist;
+		mdata.free_md();
+	}
 }

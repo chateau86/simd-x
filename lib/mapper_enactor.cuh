@@ -912,7 +912,7 @@ int mapper_hybrid_push_merge(
 	grd_size = (blk_size * grd_size)/ cfg_blk_size;
 	blk_size = cfg_blk_size;
 
-	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
+	//printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
 
     hybrid_bin_scan_push_kernel	
@@ -944,7 +944,7 @@ int mapper_merge_push(
 	grd_size = (blk_size * grd_size)/ cfg_blk_size;
 	blk_size = cfg_blk_size;
 
-	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
+	//printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
 
 	merge_push_kernel
@@ -989,7 +989,7 @@ int mapper_merge_pull(
 	grd_size = (blk_size * grd_size)/ cfg_blk_size;
 	blk_size = cfg_blk_size;
 
-	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
+	//printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
 
 	merge_pull_kernel

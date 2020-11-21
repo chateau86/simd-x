@@ -33,7 +33,7 @@ class Barrier {
 		}
 
 		virtual ~Barrier(){
-			printf("Barrier is deleted\n");
+			//printf("Barrier is deleted\n");
 			//cudaFree(d_lock);
 		}
 	public:

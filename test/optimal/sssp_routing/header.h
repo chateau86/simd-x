@@ -1,6 +1,6 @@
 #ifndef HEADER_H
 #define HEADER_H
-typedef unsigned int index_t;
+typedef long long unsigned int index_t;
 typedef int vertex_t;
 //typedef int feature_t;
 typedef long long int feature_t;

@@ -233,7 +233,7 @@ class meta_data
 		}
 		void free_md(){
 			//No more leaks
-			printf("mdata destroyed\n");
+			//printf("mdata destroyed\n");
 			if(!custom_memory){
 				H_ERR(cudaFree(vert_status));
 				H_ERR(cudaFree(vert_status_prev));

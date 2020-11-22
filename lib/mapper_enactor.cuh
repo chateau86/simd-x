@@ -97,8 +97,8 @@ merge_push_kernel(
 
 		////check if finished
 		//break;
-		printf("Calling sync_grid_opt()\n");
-		global_barrier.sync_grid_opt();
+		//printf("Calling sync_grid_opt()\n");
+		//global_barrier.sync_grid_opt();
 		if((mid_queue = mdata.worklist_sz_mid[0]) == 0 )break;//||
 		//		mdata.worklist_sz_mid[0]*ggraph.avg_degree > (GRNTY<<2)) break;
         #ifdef ENABLE_MONITORING

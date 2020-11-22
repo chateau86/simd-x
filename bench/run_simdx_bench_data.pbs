@@ -30,14 +30,4 @@ echo "Results start" > bench/res.log
 ./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 512 1 0 >> bench/res.log
 ./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 512 2 0 >> bench/res.log
 ./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 512 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 1024 1 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 1024 2 0 >> bench/res.log
-./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 1024 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 2048 1 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 2048 2 0 >> bench/res.log
-./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 2048 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 4096 1 0 >> bench/res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 4096 2 0 >> bench/res.log
-./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 4096 0 >> bench/res.log
-
 echo "Results done" >> bench/res.log

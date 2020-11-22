@@ -41,7 +41,7 @@ merge_push_kernel(
             (smem,TID, wid_in_blk, tid_in_wrp, wcount_in_blk, GRNTY, level_thd);
     #endif
 	vertex_t mid_queue = mdata.worklist_sz_mid[0]; 
-	printf("Entering merge_push_kernel() main loop\n");
+	//printf("Entering merge_push_kernel() main loop\n");
     //	if(!TID) printf("outlevel-%d: %d\n", (int)level_thd, mid_queue);
 	while(true)
 	{
@@ -65,7 +65,7 @@ merge_push_kernel(
         vertex_t my_front_count = 0;
 		//compute on the graph 
 		//and generate frontiers immediately
-		printf("Calling mapper_bin_push_online_alone()\n");
+		//printf("Calling mapper_bin_push_online_alone()\n");
         index_t appr_work = 0;
 		compute_mapper.mapper_bin_push_online_alone(
                 appr_work,
@@ -108,7 +108,7 @@ merge_push_kernel(
 
 		//compact all thread bins in frontier queue	
 
-		printf("Calling _thread_stride_gather()\n");
+		//printf("Calling _thread_stride_gather()\n");
 		worklist_gather._thread_stride_gather
 			(mdata.worklist_mid, 
 			 mdata.worklist_bin, 

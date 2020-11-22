@@ -90,6 +90,7 @@ class Barrier {
 				}
 
 				__syncthreads();
+				__syncthreads();
 			}
 		}
 };

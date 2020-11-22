@@ -158,7 +158,7 @@ void* launch_kernel(void* thread_arg){
 		double time = wtime();
 		init<<<256,256>>>(st, t_info->vert_count, mdata);
 		H_ERR(cudaThreadSynchronize());
-		printf("GPU data init ok\n");
+		printf("Launching kernel\n");
 		//* necessary for high diameter graph, e.g., euro.osm and roadnet.ca
 		mapper_merge_push(t_info->blk_size, level, t_info->ggraph, mdata, compute_mapper, worklist_gather, global_barrier);
 		H_ERR(cudaThreadSynchronize());
@@ -211,14 +211,14 @@ void* launch_kernel(void* thread_arg){
 					break;
 				}
 			} else {
-				printf("Distance result wrong!\n");
-				printf("GPU - CPU\n");
+				printf(" Distance result wrong!\n");
+				printf(" GPU - CPU\n");
 				for(int i = 0; i < t_info->vert_count; i ++) {
 					if(unpacked_gpu_dist[i] != cpu_dist[i]) {
 						printf("%d: %d - %d\n", i, unpacked_gpu_dist[i], cpu_dist[i]);
 					}
 				}
-				break;
+				//break;
 			}
 
 			delete[] cpu_dist;
@@ -316,10 +316,12 @@ int main(int args, char **argv)
 			exit(-1);
 		}
 	}
+	printf("Waiting for workers\n");
 	for(int thread_id = 0; thread_id < launcher_threads; thread_id++) {
 		pthread_join(threads[thread_id], NULL);
 		total_time += thread_gpu_time[thread_id];
 	}
+	printf("All worker done\n");
 	
 	walltime = wtime()-walltime;
 	std::cout<<"Total GPU time: "<<total_time<<" second(s).\n";

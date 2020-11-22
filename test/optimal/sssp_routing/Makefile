@@ -4,7 +4,7 @@ ldflags	= -I../../../lib/ -I. -I../../../cpu_alg/
 commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\# 
 cucc= "$(shell which nvcc)"
 cc= "$(shell which gcc)"
-cuflags= -arch=sm_60  $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
+cuflags= -arch=compute_60 -code=sm_60  $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
 cuflags += -D__AGG_MIN__
 
 #ifeq ($(monitor), 1)

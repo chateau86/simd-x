@@ -5,7 +5,7 @@ commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\#
 cucc= "$(shell which nvcc)"
 cc= "$(shell which gcc)"
 # cuflags= -arch=compute_60 -code=sm_60 -rdc=true $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
-cuflags= -arch=compute_60 -rdc=true $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
+cuflags= -arch=compute_60 -rdc=true --default-stream per-thread $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
 cuflags += -D__AGG_MIN__
 
 #ifeq ($(monitor), 1)

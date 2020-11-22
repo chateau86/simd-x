@@ -88,7 +88,7 @@ merge_push_kernel(
 				level_thd, 
 				BIN_OFF);
         //assert(mdata.worklist_sz_sml[0] != -1);
-
+		g.sync();
 		//prefix_scan
 		_grid_scan<vertex_t, vertex_t>
 			(tid_in_wrp, 

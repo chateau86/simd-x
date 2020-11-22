@@ -153,6 +153,7 @@ void* launch_kernel(void* thread_arg){
 	
 	double thread_total_gpu_time = 0;
 	for(vertex_t st = t_info->thread_id; st < t_info->vert_count; st+= t_info->thread_total) {
+		cudaMemset(level, 0, sizeof(feature_t));
 		//Init three data structures
 		printf("---at node %d/%d---\n", st, t_info->vert_count);
 		double time = wtime();

@@ -155,21 +155,21 @@ void* launch_kernel(void* thread_arg){
 	for(vertex_t st = t_info->thread_id; st < t_info->vert_count; st+= t_info->thread_total) {
 		cudaMemset(level, 0, sizeof(feature_t));
 		//Init three data structures
-		printf("---at node %d/%d---\n", st, t_info->vert_count);
+		//printf("---at node %d/%d---\n", st, t_info->vert_count);
 		double time = wtime();
 		init<<<256,256>>>(st, t_info->vert_count, mdata);
 		H_ERR(cudaThreadSynchronize());
-		printf("Launching kernel\n");
+		//printf("Launching kernel\n");
 		//* necessary for high diameter graph, e.g., euro.osm and roadnet.ca
 		mapper_merge_push(t_info->blk_size, level, t_info->ggraph, mdata, compute_mapper, worklist_gather, global_barrier);
 		H_ERR(cudaThreadSynchronize());
-		printf("Kernel ok\n");
+		//printf("Kernel ok\n");
 		time = wtime() - time;
-		std::cout<<"Node time: "<<time<<" second(s).\n";
+		//std::cout<<"Node time: "<<time<<" second(s).\n";
 		thread_total_gpu_time += time;
 		
 		cudaMemcpy(level_h, level, sizeof(feature_t), cudaMemcpyDeviceToHost);	
-		std::cout<<"Total iteration: "<<level_h[0]<<"\n";
+		//std::cout<<"Total iteration: "<<level_h[0]<<"\n";
 		
 		feature_t *packed_gpu_dist = new feature_t[t_info->vert_count];
 		H_ERR(cudaMemcpy(packed_gpu_dist, mdata.vert_status, 
@@ -180,9 +180,9 @@ void* launch_kernel(void* thread_arg){
 		unpack_cpu_dist(packed_gpu_dist, unpacked_gpu_dist, unpacked_gpu_route, t_info->vert_count);
 
 		vertex_t* route_out_ptr = t_info->all_routes + ((index_t)st * t_info->vert_count);
-		printf("Result offset: %llx\n", route_out_ptr);
+		//printf("Result offset: %llx\n", route_out_ptr);
 		memcpy(route_out_ptr, unpacked_gpu_route, sizeof(vertex_t) * t_info->vert_count);
-		printf("Route saved\n");
+		//printf("Route saved\n");
 		if(t_info->DEBUG) {
 			feature_t *cpu_dist;
 			vertex_t *cpu_routes;
@@ -323,14 +323,23 @@ int main(int args, char **argv)
 			exit(-1);
 		}
 	}
-	printf("Waiting for workers\n");
+	//printf("Waiting for workers\n");
 	for(int thread_id = 0; thread_id < launcher_threads; thread_id++) {
 		pthread_join(threads[thread_id], NULL);
 		total_time += thread_gpu_time[thread_id];
 	}
-	printf("All worker done\n");
+	//printf("All worker done\n");
 	
 	walltime = wtime()-walltime;
-	std::cout<<"Total GPU time: "<<total_time<<" second(s).\n";
-	std::cout<<"Total wall time: "<<walltime<<" second(s).\n";
+	printf("Algo, In_file, threads, blk_size, gpu_t, wall_t\n");
+	printf("### %s, %s, %d, %d, %.06f, %.06f,\n",
+		"sssp",
+		file_beg_pos,
+		launcher_threads,
+		blk_size,
+		total_time,
+		walltime
+	);
+	//std::cout<<"Total GPU time: "<<total_time<<" second(s).\n";
+	//std::cout<<"Total wall time: "<<walltime<<" second(s).\n";
 }

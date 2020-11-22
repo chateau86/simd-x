@@ -952,7 +952,7 @@ int mapper_merge_push(
 	grd_size = (blk_size * grd_size)/ cfg_blk_size;
 	blk_size = cfg_blk_size;
 
-	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
+	//printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
 	void* params[] = {
 		&level, 

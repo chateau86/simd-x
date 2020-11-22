@@ -51,9 +51,9 @@ merge_push_kernel(
 	   * should be far away after
 	   * ***if((wqueue = mdata.worklist_sz_sml[0]) == 0) break;****
 	   */
-	    printf("Calling sync_grid_opt()\n");
-		global_barrier.sync_grid_opt();
-		
+	    //printf("Calling sync_grid_opt()\n");
+		//global_barrier.sync_grid_opt();
+		__syncthreads();
 		if(!TID) 
         {    
             mdata.worklist_sz_mid[0] = 0;

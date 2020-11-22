@@ -62,7 +62,7 @@ class Barrier {
 				if (threadIdx.x == 0)
 					lock[blockIdx.x] = 1;
 
-				__syncthreads();
+				//__syncthreads();
 
 				// Wait for everyone else to report in
 				for (int peer_block = threadIdx.x; 

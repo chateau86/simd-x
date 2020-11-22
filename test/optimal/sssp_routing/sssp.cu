@@ -265,6 +265,8 @@ int main(int args, char **argv)
 		*ginst=new graph<long, long, long,vertex_t, index_t, weight_t>
 		(file_beg_pos, file_adj_list, file_weight_list);
 	
+	double walltime = wtime();
+
 	feature_t *level, *level_h;
 	cudaMalloc((void **)&level, sizeof(feature_t));
 	cudaMallocHost((void **)&level_h, sizeof(feature_t));
@@ -284,7 +286,7 @@ int main(int args, char **argv)
 	all_routes = (vertex_t*) malloc(sizeof(vertex_t) * ginst->vert_count * ginst->vert_count);
 	double total_time = 0;
 	
-	double walltime = wtime();
+
 	gpu_graph ggraph(ginst);
 	H_ERR(cudaThreadSynchronize());
 

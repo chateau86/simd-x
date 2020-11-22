@@ -247,8 +247,8 @@ int main(int args, char **argv)
         *ginst=new graph<long, long, long,vertex_t, index_t, weight_t>
         (file_beg_pos, file_adj_list, file_weight_list);
 
-    double total_time = 0;
-
+    double time = wtime();
+    double gtime = wtime();
     if(ginst->vert_count >= (1<<15)) {
         printf("***Vertex count > 2**15 may result in segfault from array address exceeding 2**32.\n");
         printf("***Proceed at your own risk!\n");
@@ -271,22 +271,25 @@ int main(int args, char **argv)
         H_ERR(cudaMalloc((void **)&g_vert_data_out, sizeof(data_out_cell_t) * vert_count * vert_count));
     }
     printf("Init ok\n");
-    double time = wtime();
+
     //bellman_ford_outbound_cpu(ginst, vert_status, vert_data_out);
     if(!ENABLE_GPU){
         printf("CPU run started\n");
         bellman_ford_inbound_cpu(ginst, vert_status, vert_data_out);
     } else {
         printf("GPU run started\n");
+        gtime = wtime();
         bellman_ford_inbound_gpu(&ggraph, g_vert_status, g_vert_data_out, BLOCK_SIZE);
+        gtime = wtime() - gtime;
     }
 
-    time = wtime() - time;
-    std::cout<<"Total APSP time: "<<time<<" second(s).\n";
     if(ENABLE_GPU) {
 		H_ERR(cudaMemcpy(vert_status, g_vert_status, STATUS_SZ, cudaMemcpyDeviceToHost));
 		H_ERR(cudaMemcpy(vert_data_out, g_vert_data_out, STATUS_SZ, cudaMemcpyDeviceToHost));
     }
+
+    time = wtime() - time;
+    std::cout<<"Total APSP time: "<<time<<" second(s).\n";
 
     for(vertex_t src_v = 0; src_v < ginst->vert_count; src_v++) {
         if(ENABLE_DEBUG) {
@@ -344,6 +347,14 @@ int main(int args, char **argv)
             }
         }
     }
-    
+    printf("Algo, In_file, threads, blk_size, gpu_t, wall_t\n");
+	printf("### %s, %s, %d, %d, %.06f, %.06f,\n",
+		"bf",
+		file_beg_pos,
+		1,
+		BLOCK_SIZE,
+		gtime,
+		time
+	);
 
 }

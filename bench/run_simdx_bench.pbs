@@ -17,7 +17,7 @@ make clean && make
 cd ~/CSE6230/project/simd-x
 echo "Compile OK"
 
-echo "Results start" > res.log
-./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 128 1 0 >> res.log
-./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 128 1 >> res.log
-echo "Results done" >> res.log
+echo "Results start" > bench/res.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 128 1 0 >> bench/res.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 128 1 >> bench/res.log
+echo "Results done" >> bench/res.log

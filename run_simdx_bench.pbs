@@ -1,0 +1,23 @@
+#PBS -N cse6230_simdx_run
+#PBS -l nodes=1:ppn=24:xeon6226:gpus=1:exclusive_process
+#PBS -l mem=65gb
+#PBS -l walltime=12:00:00
+#PBS -q coc-ice-gpu
+#PBS -o cse6230_simdx_run.out
+#PBS -m abe
+#PBS -M woradorn3@gatech.edu
+
+cd ~/CSE6230/project/simd-x
+module load cuda/10.1
+cd test/optimal/sssp_bellman_ford
+make clean && make
+cd ..
+cd sssp_routing
+make clean && make
+cd ~/CSE6230/project/simd-x
+echo "Compile OK"
+
+echo "Results start" > res.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 128 1 0 >> res.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 128 1 >> res.log
+echo "Results done" >> res.log

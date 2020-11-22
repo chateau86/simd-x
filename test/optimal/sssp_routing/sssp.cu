@@ -200,16 +200,22 @@ void* launch_kernel(void* thread_arg){
 			if (memcmp(cpu_dist, unpacked_gpu_dist, sizeof(feature_t) * t_info->vert_count) == 0) {
 				printf(" Distance result correct\n");
 				if (memcmp(cpu_routes, route_out_ptr, sizeof(vertex_t) * t_info->vert_count) == 0) {
-					printf(" Route result correct\n");
+					printf(" Route result correct (quick)\n");
 				} else {
-					printf(" Route result wrong\n");
+					int num_wrong = 0;
+					printf(" Route result check\n");
 					printf("GPU - CPU\n");
 					for(int i = 0; i < t_info->vert_count; i ++) {
 						if(route_out_ptr[i] != cpu_routes[i]) {
-							printf("%d: %d %d - %d %llx\n", i, cpu_dist[i], route_out_ptr[i], cpu_routes[i], packed_gpu_dist[i]);
+							if (route_out_ptr[i] > 1 && cpu_routes[i] > 1) {
+								printf("%d: %d %d - %d %llx\n", i, cpu_dist[i], route_out_ptr[i], cpu_routes[i], packed_gpu_dist[i]);
+								num_wrong ++;
+							}
 						}
 					}
-					break;
+					if (num_wrong > 0) {
+						break;
+					}
 				}
 			} else {
 				printf(" Distance result wrong!\n");

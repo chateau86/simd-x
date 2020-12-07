@@ -10,6 +10,8 @@
 #include <limits.h>
 #include "barrier.cuh"
 
+#include <cooperative_groups.h>
+
 //Push model: one kernel for multiple iterations
 __global__ void
 merge_push_kernel(
@@ -41,8 +43,9 @@ merge_push_kernel(
             (smem,TID, wid_in_blk, tid_in_wrp, wcount_in_blk, GRNTY, level_thd);
     #endif
 	vertex_t mid_queue = mdata.worklist_sz_mid[0]; 
-
-    //	if(!TID) printf("outlevel-%d: %d\n", (int)level_thd, mid_queue);
+	//printf("Entering merge_push_kernel() main loop\n");
+	//	if(!TID) printf("outlevel-%d: %d\n", (int)level_thd, mid_queue);
+	cooperative_groups::grid_group g = cooperative_groups::this_grid();
 	while(true)
 	{
 	  /* CANNOT immediately change worklist_sz_sml[0] to 0
@@ -51,8 +54,10 @@ merge_push_kernel(
 	   * should be far away after
 	   * ***if((wqueue = mdata.worklist_sz_sml[0]) == 0) break;****
 	   */
-		global_barrier.sync_grid_opt();
-		
+	    //printf("Calling g.sync()\n");
+		//global_barrier.sync_grid_opt();
+		g.sync();
+		//__syncthreads();
 		if(!TID) 
         {    
             mdata.worklist_sz_mid[0] = 0;
@@ -64,7 +69,7 @@ merge_push_kernel(
         vertex_t my_front_count = 0;
 		//compute on the graph 
 		//and generate frontiers immediately
-		
+		//printf("Calling mapper_bin_push_online_alone()\n");
         index_t appr_work = 0;
 		compute_mapper.mapper_bin_push_online_alone(
                 appr_work,
@@ -83,7 +88,7 @@ merge_push_kernel(
 				level_thd, 
 				BIN_OFF);
         //assert(mdata.worklist_sz_sml[0] != -1);
-
+		g.sync();
 		//prefix_scan
 		_grid_scan<vertex_t, vertex_t>
 			(tid_in_wrp, 
@@ -96,7 +101,9 @@ merge_push_kernel(
 
 		////check if finished
 		//break;
-		global_barrier.sync_grid_opt();
+		//printf("Calling g.sync() 2\n");
+		//global_barrier.sync_grid_opt();
+		g.sync();
 		if((mid_queue = mdata.worklist_sz_mid[0]) == 0 )break;//||
 		//		mdata.worklist_sz_mid[0]*ggraph.avg_degree > (GRNTY<<2)) break;
         #ifdef ENABLE_MONITORING
@@ -106,6 +113,7 @@ merge_push_kernel(
 
 		//compact all thread bins in frontier queue	
 
+		//printf("Calling _thread_stride_gather()\n");
 		worklist_gather._thread_stride_gather
 			(mdata.worklist_mid, 
 			 mdata.worklist_bin, 
@@ -944,17 +952,27 @@ int mapper_merge_push(
 	grd_size = (blk_size * grd_size)/ cfg_blk_size;
 	blk_size = cfg_blk_size;
 
-	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
+	//printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
+	void* params[] = {
+		&level, 
+		&ggraph, 
+		&mdata, 
+		&compute_mapper, 
+		&worklist_gather,
+		&global_barrier
+	};
+	H_ERR(cudaThreadSynchronize());
+	H_ERR(cudaLaunchCooperativeKernel((void *)merge_push_kernel, grd_size, blk_size, params));
 
-	merge_push_kernel
+	/*merge_push_kernel
 		<<<grd_size, blk_size>>>
 		(level, 
 		 ggraph, 
 		 mdata, 
 		 compute_mapper, 
 		 worklist_gather,
-		 global_barrier);
+		 global_barrier);*/
 	H_ERR(cudaThreadSynchronize());
 
 
@@ -992,7 +1010,17 @@ int mapper_merge_pull(
 	printf("merge -- block=%d, grid=%d\n", blk_size, grd_size);
 	assert(blk_size*grd_size <= BLKS_NUM*THDS_NUM);
 
-	merge_pull_kernel
+	void* params[] = {
+		&terminate_level,
+		&level, 
+		&ggraph, 
+		&mdata, 
+		&compute_mapper, 
+		&worklist_gather,
+		&global_barrier
+	};
+	H_ERR(cudaLaunchCooperativeKernel((void *)merge_pull_kernel, grd_size, blk_size, params));
+	/*merge_pull_kernel
 		<<<grd_size, blk_size>>>
 		(terminate_level,
 		 level, 
@@ -1000,7 +1028,8 @@ int mapper_merge_pull(
 		 mdata, 
 		 compute_mapper, 
 		 worklist_gather,
-		 global_barrier);
+		 global_barrier);*/
+
 	H_ERR(cudaThreadSynchronize());
 	return 0;
 }

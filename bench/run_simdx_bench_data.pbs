@@ -1,0 +1,62 @@
+#PBS -N cse6230_simdx_run
+#PBS -l nodes=1:ppn=24:xeon6226:gpus=1:exclusive_process
+#PBS -l mem=65gb
+#PBS -l walltime=12:00:00
+#PBS -q coc-ice-gpu
+#PBS -o cse6230_simdx_run.out
+#PBS -m abe
+#PBS -M woradorn3@gatech.edu
+
+cd ~/CSE6230/project/simd-x
+module load cuda/10.1
+cd test/optimal/sssp_bellman_ford
+make clean && make
+cd ..
+cd sssp_routing
+make clean && make
+cd ~/CSE6230/project/simd-x
+echo "Compile OK"
+
+echo "Results start - data" > bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/email1w_beg_pos.bin ~/data/email1w_csr.bin ~/data/email1w_weight.bin 1 512 0 >> bench/res2.log
+
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p24_beg_pos.bin ~/data/p2p24_csr.bin ~/data/p2p24_weight.bin 1 512 0 >> bench/res2.log
+
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/epinion_beg_pos.bin ~/data/epinion_csr.bin ~/data/epinion_weight.bin 1 512 0 >> bench/res2.log
+
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/roadCA_beg_pos.bin ~/data/roadCA_csr.bin ~/data/roadCA_weight.bin 1 512 0 >> bench/res2.log
+
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p30_beg_pos.bin ~/data/p2p30_csr.bin ~/data/p2p30_weight.bin 1 512 0 >> bench/res2.log
+
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 0 256 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 0 256 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 1 256 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 0 512 1 0 >> bench/res2.log
+./test/optimal/sssp_routing/sssp_routing_optimal.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 0 512 2 0 >> bench/res2.log
+./test/optimal/sssp_bellman_ford/sssp_bellman_ford.bin ~/data/p2p31_beg_pos.bin ~/data/p2p31_csr.bin ~/data/p2p31_weight.bin 1 512 0 >> bench/res2.log
+echo "Results done" >> bench/res2.log

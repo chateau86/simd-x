@@ -153,8 +153,7 @@ class meta_data
 			vertex_t vert_count,
 			index_t edge_count,
 			feature_t* vert_status_ovrd,
-			feature_t* vert_status_prev_ovrd,
-			data_out_cell_t* vert_data_out_ovrd
+			feature_t* vert_status_prev_ovrd
 		){
 			custom_memory = true;
 			const size_t VERT_SZ=sizeof(vertex_t)*vert_count;
@@ -176,7 +175,6 @@ class meta_data
 			//H_ERR(cudaMalloc((void **)&vert_status_prev, FEAT_SZ));
 			vert_status = vert_status_ovrd;
 			vert_status_prev = vert_status_prev_ovrd;
-			vert_data_out = vert_data_out_ovrd;
 			H_ERR(cudaMalloc((void **)&bitmap, BIT_SZ));
 			H_ERR(cudaMemset(bitmap, 0, BIT_SZ));	
 
@@ -238,11 +236,10 @@ class meta_data
 		}
 		void free_md(){
 			//No more leaks
-			printf("mdata destroyed\n");
+			//printf("mdata destroyed\n");
 			if(!custom_memory){
 				H_ERR(cudaFree(vert_status));
 				H_ERR(cudaFree(vert_status_prev));
-				H_ERR(cudaFree(vert_data_out));
 			}
 			H_ERR(cudaFreeHost(sa_chk));
 			H_ERR(cudaFreeHost(sml_count_chk));

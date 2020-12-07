@@ -7,7 +7,7 @@ template <typename index_t,
          typename feature_t>
 void cpu_sssp(
         feature_t* &dist,
-        vertex_t* &route,
+        data_out_cell_t* &route,
         vertex_t src,
         vertex_t vert_count,
         index_t edge_count,
@@ -16,9 +16,9 @@ void cpu_sssp(
         weight_t *weight){
     
     dist = new feature_t[vert_count];
-    route = new vertex_t[vert_count];
+    route = new data_out_cell_t[vert_count];
     for(vertex_t i = 0; i < vert_count; i ++) {
-        dist[i] = SMOL_INFTY;
+        dist[i] = INFTY;
         route[i] = -1;
     }
 
@@ -55,7 +55,7 @@ void cpu_sssp(
                     dist[nebr] = weit + frontier_dist;
                     route[nebr] = frontier;
                     fq_next[fq_next_count ++] = nebr;
-                } else if (dist[nebr] < SMOL_INFTY && dist[nebr] == weit + frontier_dist){
+                } else if (dist[nebr] == weit + frontier_dist){
                     // If equivalent path, prefer lower node index
                     if(route[nebr] > frontier) {
                         //printf("Equivalent route %d->%d: %d\n", nebr, frontier, weit + frontier_dist);

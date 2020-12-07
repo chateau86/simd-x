@@ -1,17 +1,16 @@
-exe=sssp_routing_optimal.bin
+exe=sssp_bellman_ford.bin
 
 ldflags	= -I../../../lib/ -I. -I../../../cpu_alg/
 # commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\# 
 commflags= --compiler-options -Wall -Xptxas -v -Xcudafe -\# 
 cucc= "$(shell which nvcc)"
 cc= "$(shell which gcc)"
-# cuflags= -arch=compute_60 -code=sm_60 -rdc=true $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
-cuflags= -arch=compute_60 -rdc=true --default-stream per-thread $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
+cuflags= -arch=compute_60 -rdc=true --default-stream per-thread  $(commflags) #-Xptxas -dlcm=cg#disable l1 cache
 cuflags += -D__AGG_MIN__
 
-#ifeq ($(monitor), 1)
-#	cuflags+= -DENABLE_MONITORING
-#endif
+ifeq ($(monitor), 1)
+	cuflags+= -DENABLE_MONITORING
+endif
 
 ifeq ($(check), 1)
 	cuflags+= -DENABLE_CHECKING

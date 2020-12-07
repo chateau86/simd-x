@@ -33,7 +33,7 @@ class Barrier {
 		}
 
 		virtual ~Barrier(){
-			printf("Barrier is deleted\n");
+			//printf("Barrier is deleted\n");
 			//cudaFree(d_lock);
 		}
 	public:
@@ -62,7 +62,7 @@ class Barrier {
 				if (threadIdx.x == 0)
 					lock[blockIdx.x] = 1;
 
-				__syncthreads();
+				//__syncthreads();
 
 				// Wait for everyone else to report in
 				for (int peer_block = threadIdx.x; 
@@ -89,6 +89,7 @@ class Barrier {
 						__threadfence_block();
 				}
 
+				__syncthreads();
 				__syncthreads();
 			}
 		}
